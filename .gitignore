@@ -1,0 +1,9 @@
+.next
+node_modules
+.env
+.env*.local
+out
+dist
+coverage
+*.log
+equipro-dashboard-smoke.png
