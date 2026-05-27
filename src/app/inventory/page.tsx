@@ -75,13 +75,13 @@ export default function InventoryPage() {
           <h1 className="text-2xl font-bold sm:text-3xl">Cylinder Inventory</h1>
           <p className="text-sm text-slate-600">Track LPG cylinders by brand, size, status, location, condition, and images.</p>
         </div>
-        <button className="flex items-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white" onClick={() => setEditing(emptyCylinder)}>
+        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white sm:w-auto" onClick={() => setEditing(emptyCylinder)}>
           <Plus className="h-4 w-4" />
           Add Cylinder
         </button>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-soft">
+      <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-4">
         <div className="grid gap-3 md:grid-cols-[1fr_180px_160px]">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -96,7 +96,43 @@ export default function InventoryPage() {
             {sizes.map((item) => <option key={item}>{item}</option>)}
           </SelectInput>
         </div>
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 grid gap-3 md:hidden">
+          {filtered.map((cylinder) => (
+            <article key={cylinder.id} className="rounded-lg border border-slate-200 bg-white p-3">
+              <div className="flex gap-3">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100">
+                  {cylinder.mainImageUrl ? <Image src={cylinder.mainImageUrl} alt={cylinder.cylinderId} fill className="object-cover" /> : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-bold">{cylinder.cylinderId}</h2>
+                      <p className="truncate text-xs text-slate-500">{cylinder.serialNumber}</p>
+                    </div>
+                    <p className="shrink-0 text-sm font-black text-ink">{money(cylinder.sellingPrice)}</p>
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">{cylinder.brand} • {cylinder.size} • {cylinder.location}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusBadge value={cylinder.status} />
+                    <StatusBadge value={cylinder.condition} />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                <span className="text-xs font-semibold text-slate-500">Updated {cylinder.lastUpdated}</span>
+                <div className="flex gap-1">
+                  <button className="rounded-md p-2 text-petrol hover:bg-petrol/10" onClick={() => setEditing(cylinder)} aria-label="Edit cylinder">
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                  <button className="rounded-md p-2 text-flame hover:bg-flame/10" onClick={() => setDeleteId(cylinder.id)} aria-label="Delete cylinder">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="mt-4 hidden overflow-x-auto md:block">
           <table className="w-full min-w-[980px] text-left text-sm">
             <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
               <tr>
@@ -147,13 +183,13 @@ export default function InventoryPage() {
       </section>
 
       {editing ? (
-        <div className="fixed inset-0 z-40 overflow-y-auto bg-ink/50 p-4">
-          <form onSubmit={saveCylinder} className="mx-auto grid max-w-5xl gap-5 rounded-lg bg-white p-5 shadow-soft">
+        <div className="fixed inset-0 z-40 overflow-y-auto bg-ink/50 p-2 sm:p-4">
+          <form onSubmit={saveCylinder} className="mx-auto grid min-h-[calc(100vh-1rem)] max-w-5xl gap-4 rounded-lg bg-white p-4 shadow-soft sm:min-h-0 sm:gap-5 sm:p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">{editing.id ? "Edit Cylinder" : "Add Cylinder"}</h2>
-              <button type="button" className="text-sm font-bold text-slate-500" onClick={() => setEditing(null)}>Close</button>
+              <h2 className="text-lg font-bold sm:text-xl">{editing.id ? "Edit Cylinder" : "Add Cylinder"}</h2>
+              <button type="button" className="min-h-10 rounded-md px-3 text-sm font-bold text-slate-500" onClick={() => setEditing(null)}>Close</button>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
               <Field label="Cylinder ID"><TextInput value={editing.cylinderId} onChange={(e) => setEditing({ ...editing, cylinderId: e.target.value })} /></Field>
               <Field label="Serial number"><TextInput value={editing.serialNumber} onChange={(e) => setEditing({ ...editing, serialNumber: e.target.value })} /></Field>
               <Field label="Brand"><SelectInput value={editing.brand} onChange={(e) => setEditing({ ...editing, brand: e.target.value as Cylinder["brand"] })}>{brands.map((item) => <option key={item}>{item}</option>)}</SelectInput></Field>
@@ -165,15 +201,15 @@ export default function InventoryPage() {
               <Field label="Selling price"><TextInput type="number" value={editing.sellingPrice} onChange={(e) => setEditing({ ...editing, sellingPrice: Number(e.target.value) })} /></Field>
             </div>
             <Field label="Notes"><TextArea value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} /></Field>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               <ImageUploader label="Main cylinder image" bucket="cylinder-images" value={editing.mainImageUrl} onChange={(url) => setEditing({ ...editing, mainImageUrl: url })} />
               <ImageUploader label="Damage image" bucket="damage-reports" value={editing.damageImageUrl} onChange={(url) => setEditing({ ...editing, damageImageUrl: url })} />
               <ImageUploader label="Delivery proof" bucket="delivery-proofs" value={editing.deliveryProofUrl} onChange={(url) => setEditing({ ...editing, deliveryProofUrl: url })} />
               <ImageUploader label="Receipt image" bucket="receipts" value={editing.receiptUrl} onChange={(url) => setEditing({ ...editing, receiptUrl: url })} />
             </div>
-            <div className="flex justify-end gap-2">
-              <button type="button" className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold" onClick={() => setEditing(null)}>Cancel</button>
-              <button className="rounded-md bg-petrol px-4 py-2 text-sm font-bold text-white">Save Cylinder</button>
+            <div className="sticky bottom-0 -mx-4 mt-auto flex gap-2 border-t border-slate-100 bg-white p-4 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:p-0">
+              <button type="button" className="min-h-11 flex-1 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold sm:flex-none" onClick={() => setEditing(null)}>Cancel</button>
+              <button className="min-h-11 flex-1 rounded-md bg-petrol px-4 py-2 text-sm font-bold text-white sm:flex-none">Save Cylinder</button>
             </div>
           </form>
         </div>

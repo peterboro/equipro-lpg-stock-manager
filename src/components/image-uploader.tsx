@@ -64,7 +64,7 @@ export function ImageUploader({ label, bucket, value, onChange }: ImageUploaderP
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="relative flex min-h-36 w-full items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white text-sm font-semibold text-petrol"
+        className="relative flex min-h-32 w-full items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white text-sm font-semibold text-petrol sm:min-h-36"
       >
         {preview ? (
           <Image src={preview} alt={label} fill sizes="280px" className="object-cover" unoptimized={preview.startsWith("blob:")} />

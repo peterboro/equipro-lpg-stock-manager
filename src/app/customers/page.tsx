@@ -52,22 +52,22 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold sm:text-3xl">Customers</h1>
           <p className="text-sm text-slate-600">Manage delivery addresses and customer contact details.</p>
         </div>
-        <button className="flex items-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white" onClick={() => setCreating(emptyCustomer)}>
+        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white sm:w-auto" onClick={() => setCreating(emptyCustomer)}>
           <Plus className="h-4 w-4" />
           Add Customer
         </button>
       </div>
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-soft">
+      <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-soft sm:p-4">
         <div className="relative max-w-xl">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <TextInput className="pl-9" placeholder="Search customer name, phone, or location" value={query} onChange={(event) => setQuery(event.target.value)} />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((customer) => (
-            <article key={customer.id} className="rounded-lg border border-slate-200 p-4">
+            <article key={customer.id} className="rounded-lg border border-slate-200 p-3 sm:p-4">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-bold">{customer.fullName}</h2>
+                <div className="min-w-0">
+                  <h2 className="truncate font-bold">{customer.fullName}</h2>
                   <p className="text-sm text-slate-600">{customer.phone}</p>
                 </div>
                 <button className="rounded-md p-2 text-flame hover:bg-flame/10" onClick={() => setDeleteId(customer.id)} aria-label="Delete customer">
@@ -86,13 +86,13 @@ export default function CustomersPage() {
       </section>
 
       {creating ? (
-        <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-ink/50 p-4">
-          <form onSubmit={saveCustomer} className="grid w-full max-w-2xl gap-4 rounded-lg bg-white p-5 shadow-soft">
+        <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-ink/50 p-2 sm:p-4">
+          <form onSubmit={saveCustomer} className="grid min-h-[calc(100vh-1rem)] w-full max-w-2xl gap-4 rounded-lg bg-white p-4 shadow-soft sm:min-h-0 sm:p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Add Customer</h2>
-              <button type="button" className="text-sm font-bold text-slate-500" onClick={() => setCreating(null)}>Close</button>
+              <h2 className="text-lg font-bold sm:text-xl">Add Customer</h2>
+              <button type="button" className="min-h-10 rounded-md px-3 text-sm font-bold text-slate-500" onClick={() => setCreating(null)}>Close</button>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
               <Field label="Full name"><TextInput value={creating.fullName} onChange={(e) => setCreating({ ...creating, fullName: e.target.value })} /></Field>
               <Field label="Phone number"><TextInput value={creating.phone} onChange={(e) => setCreating({ ...creating, phone: e.target.value })} /></Field>
               <Field label="Email"><TextInput type="email" value={creating.email} onChange={(e) => setCreating({ ...creating, email: e.target.value })} /></Field>
@@ -100,9 +100,9 @@ export default function CustomersPage() {
             </div>
             <Field label="Delivery address"><TextInput value={creating.deliveryAddress} onChange={(e) => setCreating({ ...creating, deliveryAddress: e.target.value })} /></Field>
             <Field label="Notes"><TextArea value={creating.notes} onChange={(e) => setCreating({ ...creating, notes: e.target.value })} /></Field>
-            <div className="flex justify-end gap-2">
-              <button type="button" className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold" onClick={() => setCreating(null)}>Cancel</button>
-              <button className="rounded-md bg-petrol px-4 py-2 text-sm font-bold text-white">Save Customer</button>
+            <div className="sticky bottom-0 -mx-4 mt-auto flex gap-2 border-t border-slate-100 bg-white p-4 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:p-0">
+              <button type="button" className="min-h-11 flex-1 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold sm:flex-none" onClick={() => setCreating(null)}>Cancel</button>
+              <button className="min-h-11 flex-1 rounded-md bg-petrol px-4 py-2 text-sm font-bold text-white sm:flex-none">Save Customer</button>
             </div>
           </form>
         </div>

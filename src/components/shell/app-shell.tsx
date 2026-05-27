@@ -116,28 +116,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-3 py-3 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between">
-          <Link href="/" className="font-bold">Equipro LPG</Link>
+          <Link href="/" className="flex min-w-0 items-center gap-2 font-bold">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-flame text-sm font-black text-white">E</span>
+            <span className="truncate">Equipro LPG</span>
+          </Link>
           <ClipboardList className="h-5 w-5 text-petrol" />
         </div>
         <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200",
-                pathname === item.href && "bg-petrol text-white ring-petrol"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {nav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200",
+                  pathname === item.href && "bg-petrol text-white ring-petrol"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       </header>
       <main className="lg:pl-72">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</div>
+        <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8">{children}</div>
       </main>
     </div>
   );
