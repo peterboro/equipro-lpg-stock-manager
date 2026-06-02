@@ -10,22 +10,48 @@ import { sizes } from "@/lib/options";
 const statIcons = [Boxes, PackageCheck, PackageOpen, CircleDollarSign, Truck, RefreshCcw, AlertTriangle];
 
 export default function DashboardPage() {
-  const { cylinders, transactions, customers } = useStore();
+  const { cylinders, transactions, customers, latestStockTaking } = useStore();
   const stats = computeStats(cylinders);
+  const snapshotStats = latestStockTaking
+    ? latestStockTaking.items.reduce(
+        (current, item) => {
+          current.total += item.quantity;
+          if (item.status === "Full") current.full += item.quantity;
+          if (item.status === "Empty") current.empty += item.quantity;
+          return current;
+        },
+        { total: 0, full: 0, empty: 0 }
+      )
+    : null;
+  const displayStats = {
+    total: snapshotStats?.total ?? stats.total,
+    full: snapshotStats?.full ?? stats.full,
+    empty: snapshotStats?.empty ?? stats.empty
+  };
   const statCards = [
-    ["Total cylinders", stats.total],
-    ["Full cylinders", stats.full],
-    ["Empty cylinders", stats.empty],
+    ["Total cylinders", displayStats.total],
+    ["Full cylinders", displayStats.full],
+    ["Empty cylinders", displayStats.empty],
     ["Sold cylinders", stats.sold],
     ["Delivered cylinders", stats.delivered],
     ["Returned cylinders", stats.returned],
     ["Damaged cylinders", stats.damaged]
   ];
 
-  const lowStock = sizes.map((size) => ({
-    size,
-    full: cylinders.filter((cylinder) => cylinder.size === size && cylinder.status === "Full").length
-  }));
+  const lowStock = sizes.map((size) => {
+    const snapshotFull =
+      latestStockTaking?.items
+        .filter((item) => item.size === size && item.status === "Full")
+        .reduce((total, item) => total + item.quantity, 0) ?? null;
+
+    return {
+      size,
+      full: snapshotFull ?? cylinders.filter((cylinder) => cylinder.size === size && cylinder.status === "Full").length
+    };
+  });
+  const snapshotDate = latestStockTaking
+    ? new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(latestStockTaking.takenOn))
+    : null;
 
   return (
     <div className="grid gap-6">
@@ -33,6 +59,11 @@ export default function DashboardPage() {
         <div>
           <p className="text-sm font-semibold text-petrol">Equipro Investments (K) Ltd</p>
           <h1 className="text-2xl font-bold text-ink sm:text-3xl">Dashboard</h1>
+          {latestStockTaking ? (
+            <p className="mt-1 text-sm text-slate-600">
+              Showing latest {latestStockTaking.frequency.toLowerCase()} stock count from {snapshotDate}.
+            </p>
+          ) : null}
         </div>
         <Link href="/inventory" className="flex min-h-11 w-full items-center justify-center rounded-md bg-flame px-4 py-2 text-sm font-bold text-white sm:w-auto">
           Add Cylinder

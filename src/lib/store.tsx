@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Customer, Cylinder, CylinderStatus, Transaction } from "@/lib/types";
+import type { Customer, Cylinder, CylinderStatus, StockTakingSession, Transaction } from "@/lib/types";
 import { seedCustomers, seedCylinders, seedTransactions } from "@/lib/seed-data";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase/client";
 import { mapCustomer, mapCylinder, mapTransaction } from "@/lib/supabase/mappers";
@@ -11,6 +11,7 @@ type StoreContextValue = {
   cylinders: Cylinder[];
   customers: Customer[];
   transactions: Transaction[];
+  latestStockTaking: StockTakingSession | null;
   loading: boolean;
   usingSupabase: boolean;
   refresh: () => Promise<void>;
@@ -33,6 +34,44 @@ function statusFromTransaction(type: Transaction["type"]): CylinderStatus | null
   return null;
 }
 
+type StockTakingRow = {
+  id: string;
+  taken_on: string;
+  frequency: "Daily" | "Weekly";
+  source: string | null;
+  notes: string | null;
+  stock_taking_items?: {
+    id: string;
+    source_brand: string;
+    brand: StockTakingSession["items"][number]["brand"];
+    size: StockTakingSession["items"][number]["size"];
+    status: StockTakingSession["items"][number]["status"];
+    quantity: number;
+    condition: StockTakingSession["items"][number]["condition"];
+    notes: string | null;
+  }[];
+};
+
+function mapStockTakingSession(row: StockTakingRow): StockTakingSession {
+  return {
+    id: row.id,
+    takenOn: row.taken_on,
+    frequency: row.frequency,
+    source: row.source ?? undefined,
+    notes: row.notes ?? undefined,
+    items: (row.stock_taking_items ?? []).map((item) => ({
+      id: item.id,
+      sourceBrand: item.source_brand,
+      brand: item.brand,
+      size: item.size,
+      status: item.status,
+      quantity: item.quantity,
+      condition: item.condition,
+      notes: item.notes ?? undefined
+    }))
+  };
+}
+
 async function requireAuthUser() {
   if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
@@ -44,6 +83,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [cylinders, setCylinders] = useState<Cylinder[]>(seedCylinders);
   const [customers, setCustomers] = useState<Customer[]>(seedCustomers);
   const [transactions, setTransactions] = useState<Transaction[]>(seedTransactions);
+  const [latestStockTaking, setLatestStockTaking] = useState<StockTakingSession | null>(null);
   const [loading, setLoading] = useState(false);
   const usingSupabase = isSupabaseConfigured();
 
@@ -51,19 +91,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!usingSupabase || !supabase) return;
     setLoading(true);
     try {
-      const [cylinderRows, customerRows, transactionRows] = await Promise.all([
+      const [cylinderRows, customerRows, transactionRows, stockTakingRows] = await Promise.all([
         supabase.from("cylinders").select("*").order("created_at", { ascending: false }),
         supabase.from("customers").select("*").order("created_at", { ascending: false }),
-        supabase.from("transactions").select("*").order("transaction_date", { ascending: false })
+        supabase.from("transactions").select("*").order("transaction_date", { ascending: false }),
+        supabase
+          .from("stock_taking_sessions")
+          .select("*, stock_taking_items(*)")
+          .order("taken_on", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(1)
       ]);
 
       if (cylinderRows.error) throw cylinderRows.error;
       if (customerRows.error) throw customerRows.error;
       if (transactionRows.error) throw transactionRows.error;
+      if (stockTakingRows.error) throw stockTakingRows.error;
 
       setCylinders(cylinderRows.data.map((row) => mapCylinder(row)));
       setCustomers(customerRows.data.map((row) => mapCustomer(row)));
       setTransactions(transactionRows.data.map((row) => mapTransaction(row)));
+      setLatestStockTaking(stockTakingRows.data[0] ? mapStockTakingSession(stockTakingRows.data[0] as StockTakingRow) : null);
     } finally {
       setLoading(false);
     }
@@ -83,6 +131,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCylinders(seedCylinders);
         setCustomers(seedCustomers);
         setTransactions(seedTransactions);
+        setLatestStockTaking(null);
       }
     });
 
@@ -94,6 +143,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       cylinders,
       customers,
       transactions,
+      latestStockTaking,
       loading,
       usingSupabase,
       refresh,
@@ -216,7 +266,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       }
     }),
-    [cylinders, customers, loading, refresh, transactions, usingSupabase]
+    [cylinders, customers, latestStockTaking, loading, refresh, transactions, usingSupabase]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

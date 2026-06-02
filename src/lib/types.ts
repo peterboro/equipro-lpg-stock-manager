@@ -62,6 +62,26 @@ export type Transaction = {
   notes?: string;
 };
 
+export type StockTakingItem = {
+  id: string;
+  sourceBrand: string;
+  brand: CylinderBrand;
+  size: CylinderSize;
+  status: "Full" | "Empty";
+  quantity: number;
+  condition: CylinderCondition;
+  notes?: string;
+};
+
+export type StockTakingSession = {
+  id: string;
+  takenOn: string;
+  frequency: "Daily" | "Weekly";
+  source?: string;
+  notes?: string;
+  items: StockTakingItem[];
+};
+
 export type DashboardStats = {
   total: number;
   full: number;
