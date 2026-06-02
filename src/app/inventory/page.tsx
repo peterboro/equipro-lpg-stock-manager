@@ -111,7 +111,7 @@ export default function InventoryPage() {
                     </div>
                     <p className="shrink-0 text-sm font-black text-ink">{money(cylinder.sellingPrice)}</p>
                   </div>
-                  <p className="mt-1 text-sm text-slate-600">{cylinder.brand} • {cylinder.size} • {cylinder.location}</p>
+                  <p className="mt-1 text-sm text-slate-600">{cylinder.brand} - {cylinder.size} - {cylinder.location}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <StatusBadge value={cylinder.status} />
                     <StatusBadge value={cylinder.condition} />

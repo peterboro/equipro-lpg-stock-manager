@@ -40,7 +40,7 @@ export default function ReturnsRefillsPage() {
             <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
               <div className="min-w-0">
                 <h2 className="text-lg font-bold">{cylinder.cylinderId}</h2>
-                <p className="truncate text-sm text-slate-600">{cylinder.brand} {cylinder.size} • {cylinder.serialNumber}</p>
+                <p className="truncate text-sm text-slate-600">{cylinder.brand} {cylinder.size} - {cylinder.serialNumber}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusBadge value={cylinder.status} />

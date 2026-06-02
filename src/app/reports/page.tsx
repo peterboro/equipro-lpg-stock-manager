@@ -3,21 +3,26 @@
 import { Download } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useStore } from "@/lib/store";
-import { computeStats, downloadCsv, money } from "@/lib/utils";
+import { computeStats, computeStockTakingStats, downloadCsv, money, stockTakingCountBySize, stockTakingCsvRows } from "@/lib/utils";
 import { sizes } from "@/lib/options";
 
 export default function ReportsPage() {
-  const { cylinders, transactions, customers } = useStore();
+  const { cylinders, transactions, customers, latestStockTaking } = useStore();
   const stats = computeStats(cylinders);
+  const snapshotStats = computeStockTakingStats(latestStockTaking);
+  const stockRows = stockTakingCsvRows(latestStockTaking);
   const inventoryValue = cylinders.reduce((sum, cylinder) => sum + cylinder.sellingPrice, 0);
   const sales = transactions.filter((transaction) => transaction.type === "Sale");
   const deliveries = transactions.filter((transaction) => transaction.type === "Delivery");
   const damaged = cylinders.filter((cylinder) => cylinder.condition === "Damaged" || cylinder.condition === "Leaking");
   const missing = cylinders.filter((cylinder) => cylinder.status === "Delivered" || cylinder.location === "Client Site");
+  const snapshotDate = latestStockTaking
+    ? new Intl.DateTimeFormat("en-KE", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(latestStockTaking.takenOn))
+    : null;
 
   const reportCards = [
-    { name: "Daily stock report", value: `${stats.total} cylinders`, rows: cylinders },
-    { name: "Weekly stock report", value: `${stats.full} full / ${stats.empty} empty`, rows: cylinders },
+    { name: "Daily stock report", value: `${snapshotStats?.total ?? stats.total} cylinders`, rows: stockRows.length ? stockRows : cylinders },
+    { name: "Weekly stock report", value: `${snapshotStats?.full ?? stats.full} full / ${snapshotStats?.empty ?? stats.empty} empty`, rows: stockRows.length ? stockRows : cylinders },
     { name: "Monthly stock report", value: `${transactions.length} movements`, rows: transactions },
     { name: "Sales report", value: money(sales.reduce((sum, item) => sum + item.amountPaid, 0)), rows: sales },
     { name: "Delivery report", value: `${deliveries.length} deliveries`, rows: deliveries },
@@ -31,6 +36,11 @@ export default function ReportsPage() {
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Reports</h1>
         <p className="text-sm text-slate-600">Export stock, sales, delivery, damage, missing-cylinder, and inventory value reports as CSV.</p>
+        {latestStockTaking ? (
+          <p className="mt-1 text-sm text-slate-600">
+            Stock reports use the latest {latestStockTaking.frequency.toLowerCase()} stock count from {snapshotDate}.
+          </p>
+        ) : null}
       </div>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -54,8 +64,10 @@ export default function ReportsPage() {
           <h2 className="text-lg font-bold">Stock by size</h2>
           <div className="mt-4 grid gap-3">
             {sizes.map((size) => {
-              const total = cylinders.filter((cylinder) => cylinder.size === size).length;
-              const full = cylinders.filter((cylinder) => cylinder.size === size && cylinder.status === "Full").length;
+              const snapshotTotal = stockTakingCountBySize(latestStockTaking, size);
+              const snapshotFull = stockTakingCountBySize(latestStockTaking, size, "Full");
+              const total = snapshotTotal ?? cylinders.filter((cylinder) => cylinder.size === size).length;
+              const full = snapshotFull ?? cylinders.filter((cylinder) => cylinder.size === size && cylinder.status === "Full").length;
               return (
                 <div key={size} className="grid grid-cols-[auto_1fr] items-center gap-2 rounded-md bg-slate-50 px-3 py-3 sm:flex sm:justify-between">
                   <span className="font-bold">{size}</span>

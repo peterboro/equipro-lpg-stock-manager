@@ -11,10 +11,8 @@ import { useStore } from "@/lib/store";
 import type { Transaction } from "@/lib/types";
 import { money } from "@/lib/utils";
 
-export default function TransactionsPage() {
-  const { cylinders, customers, transactions, addTransaction } = useStore();
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<Transaction>({
+function newTransactionForm(cylinders: ReturnType<typeof useStore>["cylinders"], customers: ReturnType<typeof useStore>["customers"]): Transaction {
+  return {
     id: "",
     type: "Sale",
     cylinderId: cylinders[0]?.id ?? "",
@@ -27,7 +25,13 @@ export default function TransactionsPage() {
     driverName: "",
     date: new Date().toISOString().slice(0, 10),
     notes: ""
-  });
+  };
+}
+
+export default function TransactionsPage() {
+  const { cylinders, customers, transactions, addTransaction } = useStore();
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState<Transaction>(() => newTransactionForm(cylinders, customers));
   const toast = useToast();
 
   async function saveTransaction(event: React.FormEvent<HTMLFormElement>) {
@@ -38,6 +42,7 @@ export default function TransactionsPage() {
     }
     try {
       await addTransaction(form);
+      setForm(newTransactionForm(cylinders, customers));
       setCreating(false);
       toast.success(`${form.type} recorded and cylinder status updated`);
     } catch (error) {
@@ -52,7 +57,13 @@ export default function TransactionsPage() {
           <h1 className="text-2xl font-bold sm:text-3xl">Sales & Deliveries</h1>
           <p className="text-sm text-slate-600">Record sales, deliveries, returns, refills, and stock adjustments.</p>
         </div>
-        <button className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white sm:w-auto" onClick={() => setCreating(true)}>
+        <button
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-flame px-4 py-2 text-sm font-bold text-white sm:w-auto"
+          onClick={() => {
+            setForm(newTransactionForm(cylinders, customers));
+            setCreating(true);
+          }}
+        >
           <Plus className="h-4 w-4" />
           New Transaction
         </button>

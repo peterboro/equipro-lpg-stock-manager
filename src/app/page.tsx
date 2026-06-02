@@ -4,7 +4,7 @@ import { AlertTriangle, Boxes, CircleDollarSign, PackageCheck, PackageOpen, Refr
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useStore } from "@/lib/store";
-import { computeStats, money } from "@/lib/utils";
+import { computeStats, computeStockTakingStats, money, stockTakingCountBySize } from "@/lib/utils";
 import { sizes } from "@/lib/options";
 
 const statIcons = [Boxes, PackageCheck, PackageOpen, CircleDollarSign, Truck, RefreshCcw, AlertTriangle];
@@ -12,17 +12,7 @@ const statIcons = [Boxes, PackageCheck, PackageOpen, CircleDollarSign, Truck, Re
 export default function DashboardPage() {
   const { cylinders, transactions, customers, latestStockTaking } = useStore();
   const stats = computeStats(cylinders);
-  const snapshotStats = latestStockTaking
-    ? latestStockTaking.items.reduce(
-        (current, item) => {
-          current.total += item.quantity;
-          if (item.status === "Full") current.full += item.quantity;
-          if (item.status === "Empty") current.empty += item.quantity;
-          return current;
-        },
-        { total: 0, full: 0, empty: 0 }
-      )
-    : null;
+  const snapshotStats = computeStockTakingStats(latestStockTaking);
   const displayStats = {
     total: snapshotStats?.total ?? stats.total,
     full: snapshotStats?.full ?? stats.full,
@@ -39,10 +29,7 @@ export default function DashboardPage() {
   ];
 
   const lowStock = sizes.map((size) => {
-    const snapshotFull =
-      latestStockTaking?.items
-        .filter((item) => item.size === size && item.status === "Full")
-        .reduce((total, item) => total + item.quantity, 0) ?? null;
+    const snapshotFull = stockTakingCountBySize(latestStockTaking, size, "Full");
 
     return {
       size,
@@ -118,7 +105,7 @@ export default function DashboardPage() {
                     <StatusBadge value={transaction.paymentStatus} />
                   </div>
                   <div className="mt-3 flex items-center justify-between text-sm">
-                    <span className="text-slate-600">{cylinder?.cylinderId ?? "N/A"} • {transaction.date}</span>
+                    <span className="text-slate-600">{cylinder?.cylinderId ?? "N/A"} - {transaction.date}</span>
                     <span className="font-bold">{money(transaction.amountPaid)}</span>
                   </div>
                 </article>
