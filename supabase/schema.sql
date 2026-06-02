@@ -85,6 +85,30 @@ create table public.stock_adjustments (
   adjusted_at timestamptz not null default now()
 );
 
+create table public.stock_taking_sessions (
+  id uuid primary key default gen_random_uuid(),
+  taken_on date not null,
+  frequency text not null default 'Daily' check (frequency in ('Daily', 'Weekly')),
+  source text,
+  notes text,
+  created_by uuid references public.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table public.stock_taking_items (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references public.stock_taking_sessions(id) on delete cascade,
+  source_brand text not null,
+  brand public.cylinder_brand not null,
+  size public.cylinder_size not null,
+  status public.cylinder_status not null check (status in ('Full', 'Empty')),
+  quantity integer not null check (quantity >= 0),
+  condition public.cylinder_condition not null default 'Good',
+  notes text,
+  created_at timestamptz not null default now(),
+  unique (session_id, source_brand, size, status)
+);
+
 create index idx_cylinders_status on public.cylinders(status);
 create index idx_cylinders_size on public.cylinders(size);
 create index idx_cylinders_brand on public.cylinders(brand);
@@ -95,6 +119,10 @@ create index idx_transactions_date on public.transactions(transaction_date);
 create index idx_transactions_cylinder on public.transactions(cylinder_id);
 create index idx_transactions_customer on public.transactions(customer_id);
 create index idx_stock_adjustments_cylinder on public.stock_adjustments(cylinder_id);
+create index idx_stock_taking_sessions_taken_on on public.stock_taking_sessions(taken_on);
+create index idx_stock_taking_sessions_created_by on public.stock_taking_sessions(created_by);
+create index idx_stock_taking_items_session on public.stock_taking_items(session_id);
+create index idx_stock_taking_items_brand_size_status on public.stock_taking_items(brand, size, status);
 
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
@@ -129,11 +157,16 @@ create trigger update_cylinder_after_transaction
 after insert on public.transactions
 for each row execute function public.apply_transaction_status();
 
+grant select, insert, update, delete on public.stock_taking_sessions to authenticated;
+grant select, insert, update, delete on public.stock_taking_items to authenticated;
+
 alter table public.users enable row level security;
 alter table public.cylinders enable row level security;
 alter table public.customers enable row level security;
 alter table public.transactions enable row level security;
 alter table public.stock_adjustments enable row level security;
+alter table public.stock_taking_sessions enable row level security;
+alter table public.stock_taking_items enable row level security;
 
 create policy "Authenticated users can read users" on public.users for select to authenticated using (true);
 create policy "Users can insert own profile" on public.users for insert to authenticated with check (id = auth.uid());
@@ -142,6 +175,8 @@ create policy "Authenticated users can manage cylinders" on public.cylinders for
 create policy "Authenticated users can manage customers" on public.customers for all to authenticated using (true) with check (true);
 create policy "Authenticated users can manage transactions" on public.transactions for all to authenticated using (true) with check (true);
 create policy "Authenticated users can manage stock adjustments" on public.stock_adjustments for all to authenticated using (true) with check (true);
+create policy "Authenticated users can manage stock taking sessions" on public.stock_taking_sessions for all to authenticated using (true) with check (true);
+create policy "Authenticated users can manage stock taking items" on public.stock_taking_items for all to authenticated using (true) with check (true);
 
 insert into public.cylinders (cylinder_id, serial_number, brand, size, status, condition, location, buying_price, selling_price, date_added, notes) values
 ('EQP-13-001', 'TOT-1326-001', 'Total', '13kg', 'Full', 'Good', 'Store', 6500, 9800, '2026-05-01', 'Fast moving family-size cylinder.'),
